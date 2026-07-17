@@ -1,11 +1,7 @@
 use std::sync::Arc;
-use rand::random;
-use russh::server;
-use russh::server::{Auth, Config, Handler, RunningServer, Server};
-use russh::server::Auth::Accept;
+use russh::{server, Channel, ChannelId};
+use russh::server::{ChannelOpenHandle, Handler, Msg, Server, Session};
 use russh::keys::Certificate;
-use tokio::net::{TcpListener, ToSocketAddrs};
-use tokio::net::unix::SocketAddr;
 use russh::keys::PrivateKey;
 use ssh_key::Algorithm;
 
@@ -29,12 +25,27 @@ impl Handler for MyHandler {
     ) -> Result<server::Auth, Self::Error> {
         Ok(server::Auth::Accept)
     }
+
+    async fn channel_open_session(&mut self, _channel: Channel<Msg>, reply: ChannelOpenHandle, _session: &mut Session) -> Result<(), Self::Error> {
+        reply.accept().await;
+        Ok(())
+    }
+
+    async fn shell_request(&mut self, channel: ChannelId, session: &mut Session) -> Result<(), Self::Error> {
+        const MOTD : &str = include_str!("../motd.txt");
+        let motd = MOTD.replace('\n', "\r\n");
+        session.data(channel, motd.into_bytes())?;
+        session.eof(channel)?;
+        session.exit_status_request(channel, 0)?;
+        session.close(channel)?;
+        Ok(())
+    }
 }
 
 impl Server for MyServer {
     type Handler = MyHandler;
 
-    fn new_client(&mut self, peer_addr: Option<std::net::SocketAddr>) -> Self::Handler {
+    fn new_client(&mut self, _peer_addr: Option<std::net::SocketAddr>) -> Self::Handler {
         MyHandler
     }
 }
