@@ -1,0 +1,11 @@
+[package]
+name = "sshserver"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+russh = "0.62.2"
+tokio = {version = "1.52.3",features = ["full"]}
+rand = "0.10.2"
+ssh-key = "0.7.0-rc.11"
+
