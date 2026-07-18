@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use russh::{server, Channel, ChannelId};
-use russh::server::{ChannelOpenHandle, Handler, Msg, Server, Session};
+use russh::server::{Auth, ChannelOpenHandle, Handler, Msg, Server, Session};
 use russh::keys::Certificate;
 use russh::keys::PrivateKey;
 use ssh_key::Algorithm;
@@ -10,6 +10,12 @@ struct MyHandler;
 
 impl Handler for MyHandler {
     type Error = russh::Error;
+    async fn auth_none(&mut self, user: &str) ->Result<Auth, Self::Error> {
+        Ok(Auth::Accept)
+    }
+    async fn auth_password(&mut self, user: &str, password: &str) -> Result<Auth, Self::Error> {
+        Ok(Auth::Accept)
+    }
     async fn auth_publickey(
         &mut self,
         _: &str,
